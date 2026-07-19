@@ -16,6 +16,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Host frontend static files directly from the backend to simplify deployment (Critique 3 / CORS workaround)
+from fastapi.staticfiles import StaticFiles
+current_dir = os.path.dirname(os.path.abspath(__file__))
+public_dir = os.path.abspath(os.path.join(current_dir, "..", "..", "Frontend_V2", "Frontend", "public"))
+if not os.path.exists(public_dir):
+    public_dir = os.path.abspath(os.path.join(current_dir, "..", "Frontend", "public"))
+
+if os.path.exists(public_dir):
+    app.mount("/static", StaticFiles(directory=public_dir), name="static")
+
 # Stateful global session stores mapped by unique Session IDs (Critique 3 & ADV-002)
 SESSION_STORES = {}
 
@@ -47,8 +57,9 @@ async def get_submission(req: SubmissionRequest):
     )
 
 @app.get("/")
-def read_root():
-    return {"message": "RealDoor API is running"}
+async def read_root():
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="/static/safargate.html")
 
 from ai.extraction_pipeline import process_pdf
 
