@@ -38,21 +38,22 @@ from ai.extraction_pipeline import process_pdf
 
 @app.post("/upload")
 async def upload_document(file: UploadFile = File(...)):
-    """
-    Receives a document, temporarily stores it in memory or a secure temp folder,
-    calls the AI extraction logic, and then deletes the document.
-    """
     if not file.filename.endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Only PDF files are supported.")
-    
-    # Read file content into memory (does not save to disk permanently)
+
     contents = await file.read()
-    
+
     try:
         extracted_data = await process_pdf(contents)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Extraction failed: {str(e)}")
-    
+
+    # Fill in document_id ourselves — the model doesn't know the filename
+    for field_name in ["applicant_name", "employer_name", "gross_pay", "pay_period", "date_issued", "household_size"]:
+        field_value = getattr(extracted_data, field_name)
+        if field_value is not None:
+            field_value.document_id = file.filename
+
     return {
         "status": "success",
         "filename": file.filename,
