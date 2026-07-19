@@ -416,6 +416,9 @@ footer.foot{ text-align:center; color:var(--ink-soft); font-size:.78rem; margin-
 <div class="sr-announce" id="live" role="status" aria-live="polite"></div>
 
 <script>
+const SESS_ID = localStorage.getItem('session_id') || 'sess_' + Math.random().toString(36).substr(2, 9);
+localStorage.setItem('session_id', SESS_ID);
+
 /* ================= I18N ================= */
 const T = {
 en:{
@@ -1307,7 +1310,7 @@ async function processSelectedFiles() {
       const formData = new FormData();
       formData.append("file", f._file);
       try {
-        const res = await fetch(`${API_BASE}/upload`, { method: "POST", body: formData });
+        const res = await fetch(`${API_BASE}/upload`, { method: "POST", headers: { "X-Session-ID": SESS_ID }, body: formData });
         if (!res.ok) {
           const errText = await res.text();
           alert("Backend /upload error: " + errText);
@@ -1341,7 +1344,7 @@ async function processSelectedFiles() {
           if (gross_pay && pay_period) {
              const vRes = await fetch(`${API_BASE}/validate_profile`, {
                method: "POST",
-               headers: { "Content-Type": "application/json" },
+               headers: { "Content-Type": "application/json", "X-Session-ID": SESS_ID },
                body: JSON.stringify({
                  gross_pay: gross_pay,
                  pay_period: pay_period,
@@ -1482,7 +1485,7 @@ function onClick(e){
     S.testResults.del = true;
     S.uploadedDocTypes = [];
     render(); announce(t('announceDeleted'));
-    fetch(`${API_BASE}/session`, { method: "DELETE" }).catch(console.error);
+    fetch(`${API_BASE}/session`, { method: "DELETE", headers: { "X-Session-ID": SESS_ID } }).catch(console.error);
     return;
   }
 
@@ -1512,7 +1515,7 @@ async function doAsk(kind){
       try {
           const res = await fetch(`${API_BASE}/understand`, {
               method: "POST",
-              headers: { "Content-Type": "application/json" },
+              headers: { "Content-Type": "application/json", "X-Session-ID": SESS_ID },
               body: JSON.stringify({
                   annualized_income: Number(S.fields.income.value) || 0,
                   household_size: Number(S.fields.household.value) || 1,
@@ -1568,7 +1571,7 @@ async function triggerDownload(){
   try {
     const res = await fetch(`${API_BASE}/export`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "X-Session-ID": SESS_ID },
       body: JSON.stringify(payload)
     });
     if (res.ok) {
