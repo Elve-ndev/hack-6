@@ -728,7 +728,7 @@ const S = {
   },
   qaLog:[],
   answer:null,
-  chatOpen:false,
+  chatOpen:true,
   deleteConfirmOpen:false,
   deleted:false,
   downloaded:false,
@@ -740,8 +740,8 @@ const S = {
 const LIMITS = { 1:72000, 2:82320, 3:92580, 4:102840, 5:111120, 6:119340, 7:127560, 8:135780 };
 const RULE_DOC = "LIHTC Income Limits — 2026 Schedule";
 const RULE_DATE = "2026-05-01";
-const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-  ? 'http://localhost:8000'
+const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:' || !window.location.hostname
+  ? 'http://127.0.0.1:8000'
   : 'https://safar-backend.onrender.com'; // CHANGE THIS to your production Render backend URL!
 
 function t(key, vars){
@@ -773,7 +773,6 @@ function App(){
       ${JudgeBar()}
       <footer class="foot">${t('footNote')}</footer>
     </div>
-    ${ChatWidget()}
   `;
 }
 
@@ -968,6 +967,35 @@ function Step2(){
     <h1 class="step-h1">${t('s2Title')}</h1>
     <p class="step-intro">${t('s2Intro')}</p>
     ${AutoEvidenceCard(income, household)}
+    
+    <!-- Inline RAG Chatbot Section -->
+    <div class="inline-chat" style="margin-top:24px; border-top:1.5px solid var(--line); padding-top:24px;">
+      <h2 style="font-size:1.1rem; margin-bottom:12px; font-family:var(--font-display);">${t('s2Title')}</h2>
+      
+      <div class="chat-body" id="chat-body" style="max-height:350px; overflow-y:auto; border:1px solid var(--line-strong); border-radius:8px; padding:16px; background:var(--white); display:flex; flex-direction:column; gap:12px; margin-bottom:16px;">
+        ${S.qaLog.length ? S.qaLog.map(entry=>
+          '<div class="qa-pair" style="display:flex; flex-direction:column; gap:6px;">' +
+            '<div class="q-bubble" style="align-self:flex-end; background:var(--ink); color:var(--paper); padding:10px 14px; border-radius:12px 12px 0 12px; font-size:0.86rem; max-width:80%;">' + escapeHtml(entry.q) + '</div>' +
+            (entry.loading ? '<div class="answer-card warn" style="align-self:flex-start; margin-top:0;" role="status"><p style="margin:0;font-size:0.86rem;color:var(--ink-soft);">Generating explanation...</p></div>' : 
+              (entry.explanation ? 
+                '<div class="answer-card evidence" style="align-self:flex-start; margin-top:0; width:100%; max-width:85%;" role="status"><p style="margin:0;font-size:0.86rem;line-height:1.5;">' + escapeHtml(entry.explanation) + '</p><div style="border-top:1px solid rgba(0,0,0,0.08);padding-top:10px;margin-top:8px;">' + EvidenceRows(income, household) + '</div></div>' 
+              : '<div style="align-self:flex-start; width:100%; max-width:85%;">' + AnswerCard(entry.kind, income, household) + '</div>')) +
+          '</div>'
+        ).join('') : `<p class="chat-empty" style="margin:0; font-size:0.86rem; color:var(--ink-soft); text-align:center; padding:20px 0;">${t('askPlaceholder')}</p>`}
+      </div>
+      
+      <div class="chat-foot" style="display:flex; flex-direction:column; gap:12px;">
+        <div class="chip-row" style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button class="chip" data-action="ask" data-q="limit" style="background:var(--paper-2); border:none; padding:6px 12px; border-radius:999px; font-size:0.78rem; cursor:pointer; font-weight:500; color:var(--ink);">${t('chip1')}</button>
+          <button class="chip" data-action="ask" data-q="formula" style="background:var(--paper-2); border:none; padding:6px 12px; border-radius:999px; font-size:0.78rem; cursor:pointer; font-weight:500; color:var(--ink);">${t('chip2')}</button>
+          <button class="chip" data-action="ask" data-q="qualify" style="background:var(--paper-2); border:none; padding:6px 12px; border-radius:999px; font-size:0.78rem; cursor:pointer; font-weight:500; color:var(--ink);">${t('chip3')}</button>
+        </div>
+        <div class="ask-row" style="display:flex; gap:10px;">
+          <input class="ask-input" id="ask-input" type="text" placeholder="${t('askPlaceholder')}" style="flex:1; padding:10px 14px; border:1.5px solid var(--line-strong); border-radius:8px; font-size:0.88rem; background:var(--white); color:var(--ink);">
+          <button class="btn btn-primary" data-action="ask-typed" style="padding:10px 20px; border-radius:8px; cursor:pointer; background:var(--ink); color:var(--paper); border:none;">${t('askBtn')}</button>
+        </div>
+      </div>
+    </div>
   </section>`;
 }
 
@@ -1093,8 +1121,10 @@ function computeChecklist(){
   if(v){
     const dt = new Date(v);
     if(!isNaN(dt.getTime())){
-      const cutoff = new Date(); cutoff.setFullYear(cutoff.getFullYear()-1);
-      enrollStatus = dt < cutoff ? 'expired' : 'have';
+      const cutoff = new Date('2026-07-18');
+      cutoff.setDate(cutoff.getDate() - 60);
+      const eventDate = new Date('2026-07-18');
+      enrollStatus = (dt < cutoff || dt > eventDate) ? 'expired' : 'have';
     }
   }
   list.push({ key:'enroll', name:t('docEnroll'), use:t('docEnrollUse'), status: enrollStatus });
@@ -1529,7 +1559,7 @@ async function triggerDownload(){
       rule_cited: { rule_id: "HUD-MTSP-002" }
     },
     readiness_data: {
-      status: computeChecklist().every(d=>d.status==='have') ? "READY" : "NEEDS_REVIEW",
+      status: computeChecklist().every(d=>d.status==='have') ? "READY_TO_REVIEW" : "NEEDS_REVIEW",
       missing_documents: computeChecklist().filter(d=>d.status==='missing').map(d=>d.key),
       expired_documents: computeChecklist().filter(d=>d.status==='expired').map(d=>d.key)
     }
