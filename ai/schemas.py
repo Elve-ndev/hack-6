@@ -2,6 +2,7 @@ from pydantic import BaseModel, Field
 from typing import List, Literal, Optional
 
 class ExtractedField(BaseModel):
+    document_id: str = Field(..., description="Identifier of the source document this field was extracted from")
     field: str = Field(..., description="The name of the extracted field, e.g., 'gross_pay', 'applicant_name', 'employer_name'")
     value: str = Field(..., description="The exact value found in the document")
     confidence_score: float = Field(..., description="Confidence score from 0.0 to 1.0", ge=0.0, le=1.0)
