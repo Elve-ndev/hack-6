@@ -3,7 +3,8 @@ from datetime import datetime, timedelta
 
 REQUIRED_DOCUMENTS = [
     "application_summary",
-    "pay_stub"
+    "pay_stub",
+    "employment_letter"
 ]
 
 def check_packet_readiness(uploaded_docs: List[Dict[str, Any]]) -> Dict[str, Any]:
@@ -21,7 +22,7 @@ def check_packet_readiness(uploaded_docs: List[Dict[str, Any]]) -> Dict[str, Any
     expired_docs = []
     warnings = []
     
-    today = datetime.now()
+    anchor_date = datetime(2026, 7, 18)
     
     for doc in uploaded_docs:
         doc_type = doc.get("document_type")
@@ -31,18 +32,19 @@ def check_packet_readiness(uploaded_docs: List[Dict[str, Any]]) -> Dict[str, Any
             try:
                 # Try parsing common formats
                 date_issued = datetime.strptime(date_issued_str, "%Y-%m-%d")
-                # Check if older than 12 months (roughly 365 days)
-                if (today - date_issued).days > 365:
-                    expired_docs.append(f"{doc_type} is expired (older than 12 months).")
+                # Check if older than 60 days relative to event date (2026-07-18)
+                # Also check if it is in the future relative to the event date
+                if (anchor_date - date_issued).days > 60 or date_issued > anchor_date:
+                    expired_docs.append(f"{doc_type} is expired (older than 60 days from 2026-07-18).")
             except ValueError:
                 warnings.append(f"Could not verify date for {doc_type}: {date_issued_str}")
                 
-    status = "READY" if not missing_docs and not expired_docs else "NEEDS_REVIEW"
+    status = "READY_TO_REVIEW" if not missing_docs and not expired_docs else "NEEDS_REVIEW"
     
     return {
         "status": status,
         "missing_documents": missing_docs,
         "expired_documents": expired_docs,
         "warnings": warnings,
-        "message": "Your packet is ready to be downloaded!" if status == "READY" else "There are issues with your application packet."
+        "message": "Your packet is ready to be downloaded!" if status == "READY_TO_REVIEW" else "There are issues with your application packet."
     }
