@@ -745,7 +745,7 @@ const RULE_DOC = "LIHTC Income Limits — 2026 Schedule";
 const RULE_DATE = "2026-05-01";
 const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:' || !window.location.hostname
   ? 'http://127.0.0.1:8000'
-  : 'https://safar-backend.onrender.com'; // CHANGE THIS to your production Render backend URL!
+  : window.location.origin; // Dynamically uses the host origin (no hardcoding needed!)
 
 function t(key, vars){
   let s = T[S.lang][key] ?? T.en[key] ?? key;
