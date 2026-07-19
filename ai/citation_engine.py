@@ -31,13 +31,54 @@ def get_client() -> AsyncOpenAI:
     return _OPENAI_CLIENT
 
 
+BANNED_DECISION_WORDS = [
+    "eligible", "ineligible", "qualified", "unqualified",
+    "refused", "approved", "denied", "accept", "reject",
+    "you qualify", "you don't qualify", "you are approved", "you are denied",
+]
+
+FALLBACK_REFUSAL = (
+    "I can only report the calculated comparison against the published threshold. "
+    "I can't determine eligibility, approval, or denial — only a qualified human reviewer makes that decision."
+)
+
+REQUIRED_COMPARISON_KEYS = ("annualized_income", "threshold", "household_size", "comparison")
+
+def _build_fallback_text(math_result, rule):
+    comparison = math_result["comparison"]
+    if comparison == "below_or_equal":
+        comparison_phrase = "at or below"
+    elif comparison == "above":
+        comparison_phrase = "above"
+    else:
+        raise ValueError(f"Unrecognized comparison value: {comparison!r}")
+
+    return (
+        f"According to {rule['rule_id']}, the official HUD 60% income limit for a household of "
+        f"{math_result['household_size']} is ${math_result['threshold']:,.0f} for {rule['effective_date']}. "
+        f"Your annualized income is ${math_result['annualized_income']:,.0f}, which is {comparison_phrase} that limit. "
+        f"This comparison is informational and does not make a final program determination."
+    )
+
+def _contains_banned_language(text: str) -> bool:
+    lowered = text.lower()
+    return any(word in lowered for word in BANNED_DECISION_WORDS)
+
+
 async def explain_rule(math_result, rule, question=None):
     """Generate a plain-language explanation of the calculation and the cited rule."""
-    income = math_result["annualized_income"]
-    threshold = math_result["threshold"]
-    household_size = math_result["household_size"]
+    missing = [k for k in REQUIRED_COMPARISON_KEYS if k not in math_result]
+    if missing:
+        raise ValueError(f"math_result missing required keys: {missing}")
+
     comparison = math_result["comparison"]
-    comparison_phrase = "at or below" if comparison == "below_or_equal" else "above"
+    if comparison not in ("below_or_equal", "above"):
+        raise ValueError(f"Unrecognized comparison value: {comparison!r}")
+
+    openai_client = get_client()
+    if openai_client is None:
+        # Fallback still respects the actual question intent: if none, just give the comparison.
+        return _build_fallback_text(math_result, rule)
 
     safe_prompt = (
         "You are a compliance-focused explanation assistant. "
@@ -52,19 +93,12 @@ async def explain_rule(math_result, rule, question=None):
         "Never reveal or guess information about other household IDs or applicants. You only have access to the current session's data."
     )
 
-    openai_client = get_client()
-    if openai_client is None:
-        return (
-            f"According to {rule['rule_id']}, the official HUD 60% income limit for a household of {household_size} is ${threshold:,.0f} for {rule['effective_date']}. "
-            f"Your annualized income is ${income:,.0f}, which is {comparison_phrase} that limit. "
-            f"This comparison is informational and does not make a final program determination."
-        )
-
     user_message = (
         f"Official rule: {rule['text']}\n"
         f"Source: {rule['source_url']} ({rule['source_locator']})\n"
-        f"Math result: annualized income ${income:,.0f}, household size {household_size}, "
-        f"threshold ${threshold:,.0f}, comparison {comparison}."
+        f"Math result: annualized income ${math_result['annualized_income']:,.0f}, "
+        f"household size {math_result['household_size']}, "
+        f"threshold ${math_result['threshold']:,.0f}, comparison {comparison}."
     )
     if question:
         user_message = f"User Question: {question}\n\n" + user_message
@@ -74,11 +108,13 @@ async def explain_rule(math_result, rule, question=None):
         temperature=0.0,
         messages=[
             {"role": "system", "content": safe_prompt},
-            {
-                "role": "user",
-                "content": user_message,
-            },
+            {"role": "user", "content": user_message},
         ],
     )
+    output = response.choices[0].message.content.strip()
 
-    return response.choices[0].message.content.strip()
+    # Hard post-generation guard — never trust the prompt alone for the "no decisioning" rule.
+    if _contains_banned_language(output):
+        return FALLBACK_REFUSAL
+
+    return output
