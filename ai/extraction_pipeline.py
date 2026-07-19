@@ -12,7 +12,6 @@ client = None
 
 def get_client() -> AsyncOpenAI:
     global client
-    print(f"DEBUG: get_client() called. Current client: {client}")
     if client is None:
         # Load dotenv from potential workspace locations
         from dotenv import load_dotenv
@@ -24,19 +23,15 @@ def get_client() -> AsyncOpenAI:
             os.path.join(os.path.dirname(__file__), "..", ".env"),
             os.path.join(os.path.dirname(__file__), "..", "backend", ".env")
         ]
-        print(f"DEBUG: Searching paths: {possible_paths}")
         for path in possible_paths:
             if os.path.exists(path):
-                print(f"DEBUG: Found .env at {path}")
                 load_dotenv(path)
                 
         api_key = os.getenv("OPENAI_API_KEY")
-        print(f"DEBUG: Found API Key (truncated): {api_key[:10] if api_key else 'None'}")
         if api_key:
             client = AsyncOpenAI(api_key=api_key)
         else:
             raise ValueError(f"OPENAI_API_KEY not found. Checked paths: {possible_paths}")
-    print(f"DEBUG: get_client() returning: {client}")
     return client
 
 async def extract_document_info_from_image(image_bytes: bytes, mime_type: str = "image/jpeg") -> DocumentExtractionResult:
@@ -80,7 +75,9 @@ async def extract_document_info_from_image(image_bytes: bytes, mime_type: str = 
             temperature=0.0 # Deterministic extraction
         )
         
-        return response.choices[0].message.parsed
+        parsed_result = response.choices[0].message.parsed
+        from security.allowlist_filter import clean_extraction_result
+        return clean_extraction_result(parsed_result)
 
     except Exception as e:
         print(f"Error during extraction: {e}")
