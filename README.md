@@ -5,7 +5,7 @@
 [![Tech Stack](https://img.shields.io/badge/TypeScript-59.5%25%20|%20React%20|%20Python%20API-blue?style=flat-square)]()
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)]()
 
-> **An AI-powered companion that helps renters get ready to apply for affordable housing.** Transform scattered documents into a verified profile, understand program eligibility rules with real citations, and export a complete application packet—all while maintaining strict privacy and transparency.
+> **An AI-powered companion that helps renters—especially students in need—get ready to apply for affordable housing.** Transform scattered documents into a verified profile, understand program eligibility rules with real citations, and export a complete, human-reviewed application packet.
 
 ---
 
@@ -16,8 +16,9 @@
 - Part-time campus work
 - No local credit history
 - Housing documents in multiple formats
+- **Language barriers and unfamiliar U.S. housing systems**
 
-He needs to apply for **LIHTC** affordable housing. But eligibility rules are opaque, documents are scattered, and one mistake can mean rejection.
+He needs to apply for **LIHTC** affordable housing. But eligibility rules are opaque, documents are scattered, and one mistake can mean rejection—especially for students navigating a new country's bureaucracy.
 
 **SafarGate** is his guide: extract → understand → prepare → apply.
 
@@ -54,32 +55,113 @@ He needs to apply for **LIHTC** affordable housing. But eligibility rules are op
 
 ## ✨ What Makes SafarGate Stand Out
 
-### 1. **Three-Step Journey UI**
-   - **Profile**: Upload documents → see extracted evidence with source highlights
-   - **Understand**: Ask eligibility rules → get exact citations from the rule corpus
-   - **Prepare**: Review checklist → export or delete your complete session
+### 🎯 **1. Built for Students and Low-Income Renters—Not Just General Users**
 
-### 2. **Visible Confidence & Source**
-   - No black-box confidence percentages
-   - Every extracted field shows: **source document** + **page number** + **plain-language confidence** ("high", "needs review", "uncertain")
-   - One-click correction that propagates downstream
+SafarGate specifically addresses the challenges **international and domestic students face** when applying for affordable housing:
 
-### 3. **Citation-First Explanations**
-   - Rules questions answered with exact official citations
-   - Links back to the FY2026 MTSP rule corpus
-   - Deterministic calculation with effective dates shown
+- **Irregular, multiple income sources** (assistantships, part-time work, grants) — parsed correctly without requiring a single "primary employer"
+- **Language-forward design** — clear error messages, no jargon, step-by-step guidance written for first-time international renters
+- **No credit score bias** — focuses only on income verification, not credit history
+- **Document flexibility** — accepts synthetic documents that mimic real student life (benefit letters, assistantship verification, campus employment stubs)
+- **Accessible to students without tech literacy** — full keyboard navigation, plain text, no complex UI patterns
 
-### 4. **Built-In Trust & Safety**
-   - In-app panel showing what's stored, encrypted, and deleted
-   - Live demo of session deletion (data actually disappears)
-   - Proof against prompt injection and adversarial input
+This isn't "a tool that happens to help students." This is **designed from day one for students in need.**
 
-### 5. **Accessibility-First Design**
-   - WCAG 2.2 AA compliant
-   - Full keyboard navigation
-   - Visible focus indicators
-   - No color-only status indicators
-   - Labeled controls & clear error messages
+---
+
+### 💼 **2. Radical Transparency — Every Field Has a Source**
+
+Every extracted piece of data shows:
+- **Where it came from** (document name + page number)
+- **Confidence level** (high / needs review / uncertain) — *no black-box percentages*
+- **One-click correction** that cascades through income calculation and checklist
+
+This is **not standard.** Most extraction tools hide confidence scores or don't link back to source documents. We make corrections visible and immediate—critical for students reviewing their own documents in unfamiliar systems.
+
+---
+
+### 🔗 **3. Citation-First Rule Explanations — No Guessing**
+
+Students ask: *"Can I qualify with $45,000 income?"*
+
+Instead of an AI guess, they get:
+- The exact **HUD rule text** from the official FY2026 MTSP corpus
+- Direct link to the **source document** with locator
+- **Effective date** showing when the rule applies
+- **Deterministic math:** income vs. threshold, plainly stated
+
+This prevents the most dangerous failure mode: a student believes they're ineligible based on an AI hallucination—or worse, doesn't apply at all because the system confused them.
+
+---
+
+### 🛡️ **4. Trust & Safety Built Into the UI, Not Hidden**
+
+- **In-app session panel** showing what's stored, what's encrypted, what's deleted
+- **Live demo of session deletion** — watch your data actually disappear (critical for international students concerned about data privacy)
+- **Adversarial proof** against prompt injection and hidden instructions in documents
+- **WCAG 2.2 AA** accessibility — designed for people with disabilities, low tech literacy, and non-English backgrounds
+
+Most AI tools hide their safeguards. We make them visible and testable by judges—and by students who need proof their data is safe.
+
+---
+
+### 🧮 **5. Deterministic Income Calculation — No AI Randomness**
+
+The annualized income calculation is **separated from AI** and runs in pure Python:
+- Handles multiple income sources (assistantship + part-time work + research grants)
+- Correctly interprets pay periods (weekly, bi-weekly, monthly, annual)
+- Parses date ranges to infer pay frequency from documents
+- **Reproducible:** same input → same output, always
+
+No neural network doing income math. No hallucinations. No weekend vs. weekday bias. This is especially important for students with irregular income streams.
+
+---
+
+### 🎨 **6. Three-Step Journey Designed for Real Renter & Student Workflows**
+
+- **Profile** → Upload docs, see extracted fields with source highlights, correct as needed
+- **Understand** → Ask rules questions, get official citations, understand the threshold
+- **Prepare** → Review checklist, export complete packet for submission or deletion
+
+The flow mirrors the *actual student workflow:* gather documents → understand the rules → prepare the packet. Not generic; specific to affordable housing and student life.
+
+---
+
+### ♿ **7. Accessibility as a Core Feature, Not an Afterthought**
+
+- Full keyboard navigation (no mouse required)
+- Visible focus indicators on every interactive element
+- No color-only status indicators (red/green icons have text labels)
+- Clear, tested error messages for international users
+- Screen reader compatible with ARIA labels
+- **Plain language** without housing-industry jargon
+
+This isn't "we're accessible too." This is "accessibility is non-negotiable because our users—especially international students and those with disabilities—are often the most vulnerable renters."
+
+---
+
+### 🚫 **8. Hard Refusal to Decide Eligibility**
+
+We **actively refuse** to:
+- State whether a user "qualifies" or is "eligible"
+- Rank applicants or score profiles
+- Approve or deny based on any signal (even demographic proxies we might accidentally encode)
+- Infer protected characteristics (race, national origin, disability, etc.)
+
+If a student asks *"Will I get approved?"* we respond: *"That's a human decision. Here's your comparison [income vs. threshold]. A qualified reviewer will make the final call."*
+
+This is a **trust boundary.** We cross it, we lose renters—and we fail our mission to support students fairly.
+
+---
+
+### 📊 **9. Real Data + Synthetic Test Suite Built for Student Scenarios**
+
+- **Real HUD FY2026 MTSP income limits** for Boston-Cambridge-Quincy
+- **24 synthetic test documents** including student-specific scenarios (assistantship letters, part-time employment stubs, research fellowship docs)
+- **Gold standard answer key** with exact extracted values and page coordinates
+- **Pre-baked adversarial tests** (prompt injection, hidden instructions, edge cases common in student documents)
+
+Judges can test extraction accuracy and security rigor *before* they see the demo.
 
 ---
 
@@ -244,8 +326,6 @@ npm run dev
 
 
 
-
-
 ![Profile Step](https://github.com/user-attachments/assets/ef5178da-9555-4b08-a7e5-dd68057a2a0f)
 
 ![Understand Step](https://github.com/user-attachments/assets/7ec81337-fd18-4b4a-8009-4444b5372aa4)
@@ -371,7 +451,7 @@ For **demo-specific issues**, see the **Required Demo Flow** section above.
 
 <div align="center">
 
-**Built with ❤️ for renters who deserve clarity and respect.**
+**Built with ❤️ for students and renters who deserve clarity and respect.**
 
 *Making affordable housing applications fair, transparent, and human-centered.*
 
